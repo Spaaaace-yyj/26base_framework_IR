@@ -22,7 +22,6 @@
 #include "arm_math.h"
 #include "INS_Task.h"
 
-float target_Yaw_Angle = 0.f; // 目标偏航角，单位度
 /**
  * @brief 初始化控制模块与 PID 参数。
  */
@@ -52,16 +51,12 @@ Control_Info_Typedef Control_Info;
 static float Chassis_PID_Param0[7] = {140.f, 0.2f, 0.f, 0.f, 0.f, 5000.f, 12000.f};
 static float Chassis_PID_Param1[7] = {100.f, 0.1f, 0.f, 0.f, 0.f, 5000.f, 12000.f};
 
-static float Yaw_PID_Param[7] = {100.f, 0.1f, 0.2f, 0.f, 0.f, 5000.f, 200.f};
+
 /**
  * @brief 底盘速度环位置式 PID。
  */
 PID_Info_TypeDef Chassis_PID[2];
 
-/**
- * @brief 航向角环位置式 PID。
- */
-PID_Info_TypeDef Yaw_PID;
 
 /**
  * @brief 控制主任务，运行频率 1kHz。
@@ -97,7 +92,7 @@ static void Control_Init(Control_Info_Typedef *Control_Info)
   (void)Control_Info;
   PID_Init(&Chassis_PID[0], PID_POSITION, Chassis_PID_Param0);
   PID_Init(&Chassis_PID[1], PID_POSITION, Chassis_PID_Param1); 
-  PID_Init(&Yaw_PID, PID_POSITION, Yaw_PID_Param);
+
 }
 
 static void Control_Measure_Update(Control_Info_Typedef *Control_Info)
@@ -131,15 +126,9 @@ switch(remote_ctrl.rc.s[1])
   if (abs(remote_ctrl.rc.ch[0]) > 100) // 遥控器通道 0 正在给指令
   {
     Control_Info->Target.Chassis_AngularVelocity = remote_ctrl.rc.ch[0] * 0.4f;
-    target_Yaw_Angle = INS_Info.Yaw_TolAngle; // 不断更新，作为松手后的锁定点
   }
   else
   {
-   
-    
-    PID_Calculate_Position(&Yaw_PID, target_Yaw_Angle, INS_Info.Yaw_TolAngle);
-    // 把控制量加上去
-    // Control_Info->Target.Chassis_AngularVelocity = Yaw_PID.Output; 
     Control_Info->Target.Chassis_AngularVelocity = 0;
   }
   break;
