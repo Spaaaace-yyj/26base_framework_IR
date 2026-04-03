@@ -57,7 +57,36 @@ static float Chassis_PID_Param1[7] = {100.f, 0.1f, 0.f, 0.f, 0.f, 5000.f, 12000.
  */
 PID_Info_TypeDef Chassis_PID[2];
 
+typedef struct{
+  float Kp;
+  float kd;
+  float V_Base;
+  float Wheel_distance;
+  float last_error;
+  float dt;
+}YawSing_TypeDef;
+/*
+* @brief 测试锁尾代码
+* @author XMX
+*/
+void YawSingInit(YawSing_TypeDef *YawSing,float V_Base)
+{
+  YawSing->Kp = 20.5f;
+  YawSing->kd = 0.1f;
+  YawSing->V_Base = V_Base;
+  YawSing->Wheel_distance = 0.6f;
+  YawSing->last_error = 0.f;
+  YawSing->dt = 0.01f; //10ms控制周期
+}
 
+float ControlYaw(YawSing_TypeDef *YawSing){
+  float gyro_z = INS_Info.Gyro[2]; // 当前航向角速度
+  float error = -gyro_z; // 目标航向角为0，误差为负当前角速度
+  float omega_cmd = YawSing->Kp * error + YawSing->kd * (error - YawSing->last_error) / YawSing->dt;
+  YawSing->last_error = error;
+  return omega_cmd;
+}
+YawSing_TypeDef YawSing;
 /**
  * @brief 控制主任务，运行频率 1kHz。
  * @param argument RTOS 线程参数，未使用。
@@ -68,6 +97,8 @@ void Control_Task(void const *argument)
   TickType_t Control_Task_SysTick = 0;
 
   Control_Init(&Control_Info);
+  
+  YawSingInit(&YawSing, Control_Info.Target.Chassis_Velocity);
   /* Infinite loop */
   for (;;)
   {
@@ -80,7 +111,11 @@ void Control_Task(void const *argument)
 
     /* 调试串口输出: 当前底盘速度 */
     // USART_Vofa_Justfloat_Transmit(Control_Info.Measure.Chassis_Velocity, 0.f, 0.f);
-
+    if(Control_Task_SysTick % 10 ==0 ) //100Hz任务
+    {
+      
+      
+    }
     osDelay(1);
   }
 }
@@ -134,19 +169,16 @@ switch(remote_ctrl.rc.s[1])
   break;
   default:
   return;
-
-  // Control_Info->Target.Chassis_AngularVelocity = remote_ctrl.rc.ch[0] * 5.f;
-  // USART_Vofa_Justfloat_Transmit(Control_Info->Target.Chassis_Velocity, Control_Info->Target.Chassis_AngularVelocity, 0.f);
 }
 }
 
 static void Control_Info_Update(Control_Info_Typedef *Control_Info)
 {
 
-  
+  float omega_cmd = ControlYaw(&YawSing);
   /* 计算左右轮目标速度 */
-  Chassis_Motor[1].target_speed = (Control_Info->Target.Chassis_Velocity + Control_Info->Target.Chassis_AngularVelocity * 0.6f);
-  Chassis_Motor[0].target_speed = (Control_Info->Target.Chassis_Velocity - Control_Info->Target.Chassis_AngularVelocity * 0.6f);
+  Chassis_Motor[1].target_speed = (Control_Info->Target.Chassis_Velocity + Control_Info->Target.Chassis_AngularVelocity * 0.3f-omega_cmd);
+  Chassis_Motor[0].target_speed = (Control_Info->Target.Chassis_Velocity - Control_Info->Target.Chassis_AngularVelocity * 0.3f+omega_cmd);
   USART_Vofa_Justfloat_Transmit(Chassis_Motor[0].target_speed, Chassis_Motor[1].target_speed, Control_Info->Target.Chassis_Velocity);
   /* PID 输出转换为电机控制量(int16 CAN 负载)。 */
   // PID_Calculate_Position(&Chassis_PID[0], Control_Info->Target.Chassis_Velocity, Control_Info->Measure.Chassis_Velocity);
