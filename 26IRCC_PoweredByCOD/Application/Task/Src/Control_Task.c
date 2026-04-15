@@ -46,18 +46,26 @@ static void Control_Info_Update(Control_Info_Typedef *Control_Info);
  * @brief 控制任务全局状态量。
  */
 Control_Info_Typedef Control_Info;
-
+#define Kp_S 200.f
 //                                  KP   KI   KD  Alpha Deadband  I_MAX   Output_MAX
-static float Chassis_PID_Param0[7] = {140.f, 0.2f, 0.f, 0.f, 0.f, 5000.f, 12000.f};
-static float Chassis_PID_Param1[7] = {130.f, 0.1f, 0.f, 0.f, 0.f, 5000.f, 12000.f};
+static float Chassis_PID_Param0[7] = {Kp_S, 0.0f, 0.0f, 0.f, 0.f, 5000.f, 12000.f};
+static float Chassis_PID_Param1[7] = {Kp_S, 0.0f, 0.0f, 0.f, 0.f, 5000.f, 12000.f};
+static float Chassis_PID_Param2[7] = {Kp_S, 0.0f, 0.0f, 0.f, 0.f, 5000.f, 12000.f};
+static float Chassis_PID_Param3[7] = {Kp_S, 0.0f, 0.0f, 0.f, 0.f, 5000.f, 12000.f};
 
 /*初始化左右轮编码器低通滤波器*/
 LowPassFilter1p_Info_TypeDef ChassisMotorLPF1p_R0;
 LowPassFilter1p_Info_TypeDef ChassisMotorLPF1p_L0;
+LowPassFilter1p_Info_TypeDef ChassisMotorLPF1p_R1;
+LowPassFilter1p_Info_TypeDef ChassisMotorLPF1p_L1;
+LowPassFilter1p_Info_TypeDef ChassisMotorLPF1p_R0_Output;
+LowPassFilter1p_Info_TypeDef ChassisMotorLPF1p_L0_Output;
+LowPassFilter1p_Info_TypeDef ChassisMotorLPF1p_R1_Output;
+LowPassFilter1p_Info_TypeDef ChassisMotorLPF1p_L1_Output;
 /**
  * @brief 底盘速度环位置式 PID。
  */
-PID_Info_TypeDef Chassis_PID[2];
+PID_Info_TypeDef Chassis_PID[4];
 
 typedef struct
 {
@@ -130,25 +138,35 @@ static void Control_Init(Control_Info_Typedef *Control_Info)
   /*初始化左右轮的PID计算器*/
   PID_Init(&Chassis_PID[0], PID_POSITION, Chassis_PID_Param0);
   PID_Init(&Chassis_PID[1], PID_POSITION, Chassis_PID_Param1);
-
+  PID_Init(&Chassis_PID[2], PID_POSITION, Chassis_PID_Param2);
+  PID_Init(&Chassis_PID[3], PID_POSITION, Chassis_PID_Param3);
   /*初始化Yaw轴角速度校正计算器*/
   YawSingInit(&YawSing, Control_Info->Target.Chassis_Velocity);
 
   /*初始化左右轮转速低通滤波器*/
-  LowPassFilter1p_Init(&ChassisMotorLPF1p_R0, 0.1f);
-  LowPassFilter1p_Init(&ChassisMotorLPF1p_L0, 0.1f);
+  LowPassFilter1p_Init(&ChassisMotorLPF1p_R0, 0.0f);
+  LowPassFilter1p_Init(&ChassisMotorLPF1p_L0, 0.0f);
+  LowPassFilter1p_Init(&ChassisMotorLPF1p_R1, 0.0f);
+  LowPassFilter1p_Init(&ChassisMotorLPF1p_L1, 0.0f);
+/*左右轮转速低通滤波器输出滤波*/
+  LowPassFilter1p_Init(&ChassisMotorLPF1p_R0_Output, 0.2f);
+  LowPassFilter1p_Init(&ChassisMotorLPF1p_L0_Output, 0.2f);
+  LowPassFilter1p_Init(&ChassisMotorLPF1p_R1_Output, 0.2f);
+  LowPassFilter1p_Init(&ChassisMotorLPF1p_L1_Output, 0.2f);
 
 }
 
 static void Control_Measure_Update(Control_Info_Typedef *Control_Info)
 {
   /* 更新底盘左右轮速度返回值并滤波，单位RPM*/
-  Control_Info->Measure.Chassis_WheelRight0_Velocity = LowPassFilter1p_Update(&ChassisMotorLPF1p_R0, Chassis_Motor[0].Data.Velocity);
-  Control_Info->Measure.Chassis_WheelLeft0_Velocity = LowPassFilter1p_Update(&ChassisMotorLPF1p_L0, Chassis_Motor[1].Data.Velocity);
+  Control_Info->Measure.Chassis_WheelLeft0_Velocity = LowPassFilter1p_Update(&ChassisMotorLPF1p_L0, Chassis_Motor[0].Data.Velocity);
+  Control_Info->Measure.Chassis_WheelRight0_Velocity = LowPassFilter1p_Update(&ChassisMotorLPF1p_R0, Chassis_Motor[1].Data.Velocity);
+  Control_Info->Measure.Chassis_WheelRight1_Velocity = LowPassFilter1p_Update(&ChassisMotorLPF1p_R1, Chassis_Motor[2].Data.Velocity);
+  Control_Info->Measure.Chassis_WheelLeft1_Velocity = LowPassFilter1p_Update(&ChassisMotorLPF1p_L1, Chassis_Motor[3].Data.Velocity);
+
   /*更新底盘速度和角速度*/
-  Control_Info->Measure.Chassis_Velocity = 0.08*PI*(Control_Info->Measure.Chassis_WheelRight0_Velocity + Control_Info->Measure.Chassis_WheelLeft0_Velocity) / (30*2.f); // R0,L1
-  Control_Info->Measure.Chassis_AngularVelocity = 0.08*PI*(Control_Info->Measure.Chassis_WheelLeft0_Velocity - Control_Info->Measure.Chassis_WheelRight0_Velocity) / (30*0.6f);
-  
+  Control_Info->Measure.Chassis_Velocity = 0.08 * PI * (Control_Info->Measure.Chassis_WheelRight0_Velocity + Control_Info->Measure.Chassis_WheelRight1_Velocity + Control_Info->Measure.Chassis_WheelLeft0_Velocity + Control_Info->Measure.Chassis_WheelLeft1_Velocity) / (30 * 4.f); // R0,L1
+  Control_Info->Measure.Chassis_AngularVelocity = 0.08 * PI * ((Control_Info->Measure.Chassis_WheelLeft0_Velocity + Control_Info->Measure.Chassis_WheelLeft1_Velocity) / 2 - (Control_Info->Measure.Chassis_WheelRight0_Velocity + Control_Info->Measure.Chassis_WheelRight1_Velocity) / 2) / (30 * 0.6f);
 }
 
 static void Control_Target_Update(Control_Info_Typedef *Control_Info)
@@ -169,18 +187,14 @@ static void Control_Target_Update(Control_Info_Typedef *Control_Info)
     // ch[0]右-左右
 
     /* 将遥控器通道 3 映射为目标速度 */
-    if (remote_ctrl.rc.ch[3] < -200) // 遥控器通道 3 正在给指令
-    {
-      Control_Info->Target.Chassis_Velocity = -200;
-    }
-    else
-    {
-      Control_Info->Target.Chassis_Velocity = remote_ctrl.rc.ch[3] * 1.f;
-    }
+    
+    
+      Control_Info->Target.Chassis_Velocity = remote_ctrl.rc.ch[3] * 1.0f;
+    
     /* 将遥控器通道 0 映射为目标角速度 */
     if (abs(remote_ctrl.rc.ch[0]) > 100) // 遥控器通道 0 正在给指令
     {
-      Control_Info->Target.Chassis_AngularVelocity = remote_ctrl.rc.ch[0] * 0.6f;
+      Control_Info->Target.Chassis_AngularVelocity = remote_ctrl.rc.ch[0] * 0.5f;
     }
     else
     {
@@ -199,27 +213,34 @@ static void Control_Info_Update(Control_Info_Typedef *Control_Info)
   float omega_cmd = ControlYaw(&YawSing);
 
   /* 计算左右轮目标速度 */
-  Chassis_Motor[1].target_speed = (Control_Info->Target.Chassis_Velocity + Control_Info->Target.Chassis_AngularVelocity * 0.6f - omega_cmd);
-  Chassis_Motor[0].target_speed = (Control_Info->Target.Chassis_Velocity - Control_Info->Target.Chassis_AngularVelocity * 0.6f + omega_cmd);
+  Chassis_Motor[0].target_speed = -(Control_Info->Target.Chassis_Velocity + Control_Info->Target.Chassis_AngularVelocity * 0.6f - omega_cmd); // 左轮0
+  Chassis_Motor[1].target_speed = (Control_Info->Target.Chassis_Velocity - Control_Info->Target.Chassis_AngularVelocity * 0.6f + omega_cmd); // 右轮0
+  Chassis_Motor[2].target_speed = Chassis_Motor[1].target_speed;                                                                             // 右轮1
+  Chassis_Motor[3].target_speed = Chassis_Motor[0].target_speed;                                                                             // 左轮1
 
   /*PID计算输出值*/
-  PID_Calculate_Position(&Chassis_PID[0], Chassis_Motor[0].target_speed, Control_Info->Measure.Chassis_WheelRight0_Velocity);
-  PID_Calculate_Position(&Chassis_PID[1], -Chassis_Motor[1].target_speed, Control_Info->Measure.Chassis_WheelLeft0_Velocity);
-
+  PID_Calculate_Position(&Chassis_PID[0], Chassis_Motor[0].target_speed, Control_Info->Measure.Chassis_WheelLeft0_Velocity);  // 左轮0
+  PID_Calculate_Position(&Chassis_PID[1], Chassis_Motor[1].target_speed, Control_Info->Measure.Chassis_WheelRight0_Velocity); // 右轮0
+  PID_Calculate_Position(&Chassis_PID[2], Chassis_Motor[2].target_speed, Control_Info->Measure.Chassis_WheelRight1_Velocity); // 右轮1
+  PID_Calculate_Position(&Chassis_PID[3], Chassis_Motor[3].target_speed, Control_Info->Measure.Chassis_WheelLeft1_Velocity);  // 左轮1
   switch (remote_ctrl.rc.s[1])
   {
   case 1:
-  /*左上*/
+    /*左上*/
     break;
   case 2:
-  /*左下*/
+    /*左下*/
     Control_Info->SendValue[0] = 0;
     Control_Info->SendValue[1] = 0;
+    Control_Info->SendValue[2] = 0;
+    Control_Info->SendValue[3] = 0;
     break;
   case 3:
-  /*左中*/
-    Control_Info->SendValue[0] = (int16_t)Chassis_PID[0].Output;
-    Control_Info->SendValue[1] = (int16_t)Chassis_PID[1].Output;
+    /*左中*/
+    Control_Info->SendValue[0] = LowPassFilter1p_Update(&ChassisMotorLPF1p_R0_Output, (int16_t)Chassis_PID[0].Output);
+    Control_Info->SendValue[1] = LowPassFilter1p_Update(&ChassisMotorLPF1p_L0_Output, (int16_t)Chassis_PID[1].Output);
+    Control_Info->SendValue[2] = LowPassFilter1p_Update(&ChassisMotorLPF1p_R1_Output, (int16_t)Chassis_PID[2].Output);
+    Control_Info->SendValue[3] = LowPassFilter1p_Update(&ChassisMotorLPF1p_L1_Output, (int16_t)Chassis_PID[3].Output);
     break;
   default:
     return;

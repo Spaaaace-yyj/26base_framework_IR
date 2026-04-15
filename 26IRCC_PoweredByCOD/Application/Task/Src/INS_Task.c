@@ -91,7 +91,7 @@ void INS_Task(void const * argument)
 {
   /* USER CODE BEGIN INS_Task */
   TickType_t INS_Task_SysTick = 0;
-	float plustick=0,correction=0;
+
 
 	/* Initializes the INS_Task. */
 	INS_Task_Init();
@@ -123,7 +123,7 @@ void INS_Task(void const * argument)
 
     /* 更新欧拉角(角度制) */
     INS_Info.Pitch_Angle = Quaternion_Info.EulerAngle[IMU_ANGLE_INDEX_PITCH]*57.295779513f;
-    INS_Info.Yaw_Angle   = Quaternion_Info.EulerAngle[IMU_ANGLE_INDEX_YAW]   *57.295779513f-correction;
+    INS_Info.Yaw_Angle   = Quaternion_Info.EulerAngle[IMU_ANGLE_INDEX_YAW]   *57.295779513f;
     INS_Info.Roll_Angle  = Quaternion_Info.EulerAngle[IMU_ANGLE_INDEX_ROLL]*57.295779513f;
 		
     /* 更新航向累计角，处理跨 +/-180 度回环 */
@@ -148,9 +148,7 @@ void INS_Task(void const * argument)
 		{
       /* INS 主循环 1kHz，温控环按 200Hz 执行。 */
 			BMI088_Temp_Control(BMI088_Info.Temperature);
-			
-			correction= plustick*(1.0/60000);
-      plustick+=5;
+
 		}
 
     osDelayUntil(&INS_Task_SysTick,1);

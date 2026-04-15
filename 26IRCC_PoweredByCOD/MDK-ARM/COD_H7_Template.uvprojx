@@ -340,7 +340,7 @@
               <MiscControls></MiscControls>
               <Define>USE_HAL_DRIVER,STM32H723xx,ARM_MATH_CM7,__FPU_PRESENT=1U,ARM_MATH_CHECK</Define>
               <Undefine></Undefine>
-              <IncludePath>../Core/Inc;../Drivers/STM32H7xx_HAL_Driver/Inc;../Drivers/STM32H7xx_HAL_Driver/Inc/Legacy;../Drivers/CMSIS/Device/ST/STM32H7xx/Include;../Drivers/CMSIS/Include;../Middlewares/Third_Party/FreeRTOS/Source/include;../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS;../Middlewares/Third_Party/FreeRTOS/Source/portable/RVDS/ARM_CM4F;../Application/Task/Inc;../Components/Device/Inc;../Components/Controller/Inc;../Components/Algorithm/Inc;../BSP/Inc;../SystemView/SEGGER/Syscalls;../SystemView/Sample/FreeRTOSV10;../SystemView/Sample/FreeRTOSV10/Patch;../SystemView/Config;../SystemView/SEGGER;../Middlewares/ST/ARM/DSP/Inc;../USB_DEVICE/App;../USB_DEVICE/Target;../Middlewares/ST/STM32_USB_Device_Library/Core/Inc;../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc</IncludePath>
+              <IncludePath>../Core/Inc;../Drivers/STM32H7xx_HAL_Driver/Inc;../Drivers/STM32H7xx_HAL_Driver/Inc/Legacy;../Drivers/CMSIS/Device/ST/STM32H7xx/Include;../Drivers/CMSIS/Include;../Middlewares/Third_Party/FreeRTOS/Source/include;../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS;../Middlewares/Third_Party/FreeRTOS/Source/portable/RVDS/ARM_CM4F;../Application/Task/Inc;../Components/Device/Inc;../Components/Controller/Inc;../Components/Algorithm/Inc;../BSP/Inc;../SystemView/SEGGER/Syscalls;../SystemView/Sample/FreeRTOSV10;../SystemView/Sample/FreeRTOSV10/Patch;../SystemView/Config;../SystemView/SEGGER;../Middlewares/ST/ARM/DSP/Inc;../USB_DEVICE/App;../USB_DEVICE/Target;../Middlewares/ST/STM32_USB_Device_Library/Core/Inc;../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc;..\Components\Master_machine</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -544,6 +544,16 @@
               <FileType>1</FileType>
               <FilePath>..\Components\Algorithm\Src\CRC.c</FilePath>
             </File>
+            <File>
+              <FileName>crc8.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Components\Algorithm\Src\crc8.c</FilePath>
+            </File>
+            <File>
+              <FileName>crc16.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Components\Algorithm\Src\crc16.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -553,6 +563,31 @@
               <FileName>startup_stm32h723xx.s</FileName>
               <FileType>2</FileType>
               <FilePath>startup_stm32h723xx.s</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>Components/Master_machine</GroupName>
+          <Files>
+            <File>
+              <FileName>master_process.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Components\Master_machine\master_process.c</FilePath>
+            </File>
+            <File>
+              <FileName>master_process.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\Components\Master_machine\master_process.h</FilePath>
+            </File>
+            <File>
+              <FileName>seasky_protocol.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Components\Master_machine\seasky_protocol.c</FilePath>
+            </File>
+            <File>
+              <FileName>seasky_protocol.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\Components\Master_machine\seasky_protocol.h</FilePath>
             </File>
           </Files>
         </Group>

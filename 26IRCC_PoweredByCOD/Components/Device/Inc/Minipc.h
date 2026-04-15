@@ -20,9 +20,21 @@
 /* Includes ------------------------------------------------------------------*/
 #include "stdint.h"
 #include "stdbool.h" 
+#include "usbd_cdc_if.h"
 
+// extern void MiniPC_Transmit_Info(uint8_t *Buff, uint16_t Len);
 
-extern void MiniPC_Transmit_Info(uint8_t *Buff);
+// extern void MiniPC_Receive_Info(uint8_t* Buff, const uint32_t *Len);
+typedef struct
+{
+    USBCallback tx_cbk;
+    USBCallback rx_cbk;
+} USB_Init_Config_s;
 
-extern void MiniPC_Recvive_Info(uint8_t* Buff, const uint32_t *Len);
+/* @note 虚拟串口的波特率/校验位/数据位等动态可变,取决于上位机的设定 */
+/* 使用时不需要关心这些设置(作为从机) */
+
+uint8_t *USBInit(USB_Init_Config_s usb_conf); // bsp初始化时调用会重新枚举设备
+
+void USBTransmit(uint8_t *buffer, uint16_t len); // 通过usb发送数据
 #endif

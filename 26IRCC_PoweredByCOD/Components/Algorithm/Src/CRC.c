@@ -2,12 +2,12 @@
 /**
   ******************************************************************************
   * @file           : CRC.c
-  * @brief          : CRC check 
+  * @brief          : CRC 校验
   * @author         : GarssFan Wang
   * @date           : 2025/01/22
   * @version        : v1.0
   ******************************************************************************
-  * @attention      : To be tested
+  * @attention      : 待测试
   ******************************************************************************
   */
 /* USER CODE END Header */
@@ -15,7 +15,7 @@
 #include "CRC.h"
 #include "string.h"
 
-//crc8 generator polynomial:G(x=x8+x5+x4+1  
+//crc8 生成多项式: G(x)=x8+x5+x4+1  
 const uint8_t CRC8_INIT = 0xff;  
 
 const uint8_t CRC8_TAB[256] =  
@@ -78,11 +78,11 @@ const uint16_t wCRC_Table[256] =
 };
 
 /**
-  * @brief          calculate the crc8  
-  * @param[in]      pch_message: data
-  * @param[in]      dw_length: stream length = data + checksum
-  * @param[in]      ucCRC8: init CRC8
-  * @retval         calculated crc8
+  * @brief          计算 crc8 校验码
+  * @param[in]      pch_message: 数据缓冲区
+  * @param[in]      dw_length: 数据流长度 = 数据长度 + 校验码长度
+  * @param[in]      ucCRC8: 初始 CRC8
+  * @retval         计算得到的 crc8 校验码
   */
 uint8_t Get_CRC8_Check_Sum(unsigned char *pch_message,unsigned int dw_length,unsigned char ucCRC8)
 {
@@ -96,10 +96,10 @@ uint8_t Get_CRC8_Check_Sum(unsigned char *pch_message,unsigned int dw_length,uns
 }
 
 /**
-  * @brief          CRC8 verify function  
-  * @param[in]      pch_message: data
-  * @param[in]      dw_length:stream length = data + checksum
-  * @retval         true of false
+  * @brief          CRC8 校验函数
+  * @param[in]      pch_message: 数据缓冲区
+  * @param[in]      dw_length: 数据流长度 = 数据长度 + 校验码长度
+  * @retval         校验结果，正确返回 true (1)，错误返回 false (0)
   */
 bool Verify_CRC8_Check_Sum(unsigned char *pch_message, unsigned int dw_length)
 {
@@ -113,10 +113,10 @@ bool Verify_CRC8_Check_Sum(unsigned char *pch_message, unsigned int dw_length)
 }
 
 /**
-  * @brief          append CRC8 to the end of data
-  * @param[in]      pch_message: data
-  * @param[in]      dw_length:stream length = data + checksum
-  * @retval         none
+  * @brief          将 CRC8 校验码附加到数据的末尾
+  * @param[in]      pch_message: 数据缓冲区
+  * @param[in]      dw_length: 数据流长度 = 数据长度 + 校验码长度
+  * @retval         无
   */
 void Append_CRC8_Check_Sum(unsigned char *pch_message, unsigned int dw_length)
 {
@@ -130,11 +130,11 @@ void Append_CRC8_Check_Sum(unsigned char *pch_message, unsigned int dw_length)
 }
 
 /**
-  * @brief          calculate the crc16  
-  * @param[in]      pch_message: data
-  * @param[in]      dw_length: stream length = data + checksum
-  * @param[in]      wCRC: init CRC16
-  * @retval         calculated crc16
+  * @brief          计算 crc16 校验码
+  * @param[in]      pch_message: 数据缓冲区
+  * @param[in]      dw_length: 数据流长度 = 数据长度 + 校验码长度
+  * @param[in]      wCRC: 初始 CRC16
+  * @retval         计算得到的 crc16 校验码
   */
 uint16_t Get_CRC16_Check_Sum(uint8_t *pch_message,uint32_t dw_length,uint16_t wCRC)
 {
@@ -152,10 +152,10 @@ uint16_t Get_CRC16_Check_Sum(uint8_t *pch_message,uint32_t dw_length,uint16_t wC
 }
 
 /**
-  * @brief          CRC16 verify function  
-  * @param[in]      pch_message: data
-  * @param[in]      dw_length:stream length = data + checksum
-  * @retval         true of false
+  * @brief          CRC16 校验函数
+  * @param[in]      pch_message: 数据缓冲区
+  * @param[in]      dw_length: 数据流长度 = 数据长度 + 校验码长度
+  * @retval         校验结果，正确返回 true (1)，错误返回 false (0)
   */
 bool Verify_CRC16_Check_Sum(uint8_t *pchMessage, uint32_t dwLength)
 {
@@ -169,10 +169,10 @@ bool Verify_CRC16_Check_Sum(uint8_t *pchMessage, uint32_t dwLength)
 }
 
 /**
-  * @brief          append CRC16 to the end of data
-  * @param[in]      pch_message: data
-  * @param[in]      dw_length:stream length = data + checksum
-  * @retval         none
+  * @brief          将 CRC16 校验码附加到数据的末尾
+  * @param[in]      pch_message: 数据缓冲区
+  * @param[in]      dw_length: 数据流长度 = 数据长度 + 校验码长度
+  * @retval         无
   */
 void Append_CRC16_Check_Sum(uint8_t * pchMessage,uint32_t dwLength)
 {
