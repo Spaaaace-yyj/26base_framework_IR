@@ -23,8 +23,60 @@
 #include "referee_UI.h"
 #include "arm_math.h"
 
-void ChassisInit()
-{
+
+static Publisher_t *Chassis_Pub;//发布底盘的数据
+static Subscriber_t *Chassis_Sub;//用于订阅底盘的控制命令
+
+static  Chassis_Ctrl_Cmd_s Chassis_Cmd_Recv;//底盘接收到的控制命令
+static  Chassis_Upload_Data_s Chassis_Feedback_Data;//底盘回传的反馈数据
+
+static DJIMotorInstance *Motor_Lf, *Motor_Lb, *Motor_Rf, *Motor_Rb;//左前【1】，左后【4】，右前【2】，右后【3】
+
+static float Chassis_Velocity = 0,Chassis_Angular_Velocity = 0;//底盘的线速度和角速度
+static volatile float Chassis_VLF = 0,Chassis_VLB = 0,Chassis_VLR = 0,Chassis_VRB=0;//每个轮子的目标速度
+
+void ChassisInit() {
+    //四个轮子的参数是一样的，只是ID和转速有差别从后往前看顺时针左上为ID1
+    Motor_Init_Config_s Chassis_Motor_config ={
+        .can_init_config = &hfdcan1, // 修改为对应的CAN接口
+        .controller_param_init_config = {
+            .speed_PID = {
+                .Kp = 4.5f,
+                .Ki = .0f,
+                .Kd = .0f,
+                .IntegralLimit = 3000,
+                .Improve = PID_Trapezoid_Intergral | PID_Integral_Limit | PID_Derivative_On_Measurement,
+                .MaxOut = 15000,
+                .Output_LPF_RC = 0.3f,
+
+            },
+        },
+        .controller_setting_init_config = {
+        .angle_feedback_source = MOTOR_FEED,
+        .speed_feedback_source = MOTOR_FEED,
+        .outer_loop_type = SPEED_LOOP,
+        .close_loop_type = SPEED_LOOP,
+        },
+        .motor_type = M3508,
+    };
+    Chassis_Motor_config.can_init_config.tx_id = 1;//左前
+    Chassis_Motor_config.controller_setting_init_config.motor_reverse_flag = MOTOR_DIRECTION_NORMAL;
+    Motor_Lf = DJIMotorInit(&Chassis_Motor_config);
+
+    Chassis_Motor_config.can_init_config.tx_id = 2;//右前
+    Chassis_Motor_config.controller_setting_init_config.motor_reverse_flag = MOTOR_DIRECTION_REVERSE;
+    Motor_Rf = DJIMotorInit(&Chassis_Motor_config);
+
+    Chassis_Motor_config.can_init_config.tx_id = 3;//右后
+    Chassis_Motor_config.controller_setting_init_config.motor_reverse_flag = MOTOR_DIRECTION_REVERSE;
+    Motor_Rb = DJIMotorInit(&Chassis_Motor_config);
+
+    Chassis_Motor_config.can_init_config.tx_id = 4;//左后
+    Chassis_Motor_config.controller_setting_init_config.motor_reverse_flag = MOTOR_DIRECTION_NORMAL;
+    Motor_Lb = DJIMotorInit(&Chassis_Motor_config);
+
+    Chassis_Sub = SubRegister("Chassis_Cmd",sizeof(Chassis_Ctrl_Cmd_s));
+    Chassis_Pub = PubRegister("Chassis_Feed",sizeof(Chassis_Upload_Data_s));
 
 }
 
