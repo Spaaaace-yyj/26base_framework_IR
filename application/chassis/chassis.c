@@ -20,12 +20,9 @@ static  Chassis_Upload_Data_s Chassis_Feedback_Data;//底盘回传的反馈数�
 static DJIMotorInstance *Motor_Lf, *Motor_Lb, *Motor_Rf, *Motor_Rb;//左前1，左后4，右前2，右后3
 static PIDInstance Yaw_Angle_Controller, Yaw_Angle_Velocity_Controller;//用于底盘跟随yaw角度的pid控制器
 
-// 根据你的传感器单位(弧度或角度)修改周期值。这里的取值以角度(Degree)为例：如果传进来的是弧度请改用 PI 和 2*PI
-#define YAW_HALF_PERIOD 180.0f
-#define YAW_PERIOD      360.0f
-
 static float Chassis_Target_Velocity = 0,Chassis_Target_Angular_Velocity = 0;//底盘的目标线速度和角速度
 static float Temp_Target_wz = 0;
+
 static volatile float Chassis_Target_VLF = 0,Chassis_Target_VLB = 0,Chassis_Target_VRF = 0,Chassis_Target_VRB=0;//每个轮子的目标速度
 
 void ChassisInit() {
@@ -35,12 +32,12 @@ void ChassisInit() {
         .controller_param_init_config = {
             .speed_PID = {
 
-                .Kp = 412.7f,//40
-                .Ki = 12.4f,
-                .Kd = 6.6f,
+                .Kp = 450.f,//40
+                .Ki = 50.7f,
+                .Kd = 5.1f,
                 .IntegralLimit = 5000,
                 .Improve = PID_Trapezoid_Intergral | PID_Integral_Limit | PID_Derivative_On_Measurement | PID_OutputFilter,
-                .MaxOut = 15000,
+                .MaxOut = 20000,
                 .Output_LPF_RC =  0.21,
                 .Derivative_LPF_RC = 0.52f,
             },
@@ -50,7 +47,7 @@ void ChassisInit() {
                 .Kd = 0.f,
                 .IntegralLimit = 3000,
                 .Improve = PID_Trapezoid_Intergral | PID_Integral_Limit | PID_Derivative_On_Measurement,
-                .MaxOut = 15000,
+                .MaxOut = 20000,
             },
         },
         .controller_setting_init_config = {
@@ -78,22 +75,25 @@ void ChassisInit() {
     Motor_Lb = DJIMotorInit(&Chassis_Motor_config);
 
     PID_Init_Config_s Yaw_Angle_Compensator_Config = {
-        .Kp = 0.027f,
-        .Ki = 0.0f,
-        .Kd = 0.0f,
+        .Kp = 1.0,
+        .Ki = 1.0,
+        .Kd = 0.5,
         .Improve = PID_Trapezoid_Intergral | PID_Integral_Limit | PID_Derivative_On_Measurement | PID_OutputFilter,
-        .IntegralLimit = 10.0f,
-        .MaxOut = 25.0f,
-        .DeadBand = 0.5f,
+        .IntegralLimit = 2000,
+        .MaxOut = 5000,
+        .DeadBand = 0,
+        .Output_LPF_RC = 0.0,
     };
 
     PID_Init_Config_s Yaw_Angle_Velocity_Compensator_Config = {
-        .Kp = 1.0f,
-        .Ki = 1.0f,
-        .Kd = 0.5f,
-        .IntegralLimit = 500.0f,
-        .Improve = PID_Trapezoid_Intergral | PID_Integral_Limit | PID_Derivative_On_Measurement,
-        .MaxOut = 1000.0f,
+        .Kp = 10.0,
+        .Ki = 0.0,
+        .Kd = 0.5,
+        .Improve = PID_Trapezoid_Intergral | PID_Integral_Limit | PID_Derivative_On_Measurement | PID_OutputFilter,
+        .IntegralLimit = 2000,
+        .MaxOut = 5000,
+        .DeadBand = 0,
+        .Output_LPF_RC = 0.1,
     };
 
     PIDInit(&Yaw_Angle_Velocity_Controller, &Yaw_Angle_Velocity_Compensator_Config);
@@ -159,7 +159,7 @@ void ChassisTask()
         break;
     }
     Temp_Target_wz = PIDCalculate(&Yaw_Angle_Controller, Chassis_Cmd_Recv.offset_angle, 0.0f);
-    Chassis_Target_Angular_Velocity = PIDCalculate(&Yaw_Angle_Velocity_Controller, Chassis_Cmd_Recv.yaw_speed, Chassis_Cmd_Recv.wz);
+    Chassis_Target_Angular_Velocity = PIDCalculate(&Yaw_Angle_Velocity_Controller, -Chassis_Cmd_Recv.yaw_speed, Chassis_Cmd_Recv.wz);
 
     MecanumCalculate();
     UpdateMotorRef();

@@ -59,7 +59,7 @@ static void RemoteControlSet(void)
         Chassis_Cmd_Send.chassis_mode =CHASSIS_ZERO_FORCE;
     }else if (switch_is_mid(rc_data[TEMP].rc.switch_left)) {
         Chassis_Cmd_Send.chassis_mode = CHASSIS_NORMAL;
-    }else if (switch_is_down(rc_data[TEMP].rc.switch_left)){
+    }else {
         Chassis_Cmd_Send.chassis_mode = CHASSIS_ZERO_FORCE;//避免未定义的拨杆状态出现造成控制混乱
     }
 
